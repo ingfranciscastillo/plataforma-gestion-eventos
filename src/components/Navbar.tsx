@@ -17,7 +17,7 @@ export const Navbar = () => {
         </Link>
 
         <div className="flex items-center gap-4">
-          <Link to="/">
+          <Link to="/crear-evento">
             <Button variant={"default"} className="gap-2">
               <PlusIcon className="size-4" />
               Crear evento

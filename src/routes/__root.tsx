@@ -11,7 +11,7 @@ function RootComponent() {
   return (
     <React.Fragment>
       <Navbar />
-      <main className="py-20 px-10">
+      <main>
         <Outlet />
         <TanStackRouterDevtoolsInProd />
       </main>
