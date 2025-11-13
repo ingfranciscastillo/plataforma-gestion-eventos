@@ -1,9 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useForm } from "@tanstack/react-form";
 import { z } from "zod";
 import {
   Field,
-  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -25,16 +24,28 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
+import { SelectValue } from "@radix-ui/react-select";
+import { useState } from "react";
 
 const createEventSchema = z.object({
-  title: z
-    .string()
-    .min(5, "El titulo tiene que tener mas de 5 caracteres")
-    .max(100, "El titulo debe tener menos de 100 caracteres"),
+  title: z.string().min(3, "El título es obligatorio"),
   description: z
     .string()
-    .min(20, "La descripción debe tener minimo de 20 caracteres")
-    .max(200, "La descripción debe tener maximo de 200 caracteres"),
+    .min(10, "La descripción debe tener al menos 10 caracteres"),
+  category: z.string().min(1, "Selecciona una categoría"),
+  capacity: z.number().min(1, "Debe haber al menos 1 persona"),
+  date: z.string().min(1, "La fecha es obligatoria"),
+  time: z.string().min(1, "La hora es obligatoria"),
+  location: z.string().min(3, "La ubicación es obligatoria"),
+  price: z.number().min(0, "El precio no puede ser negativo").optional(),
+  organizer: z.string().min(2, "El organizador es obligatorio"),
+  image: z.url("Debe ser una URL válida").optional(),
 });
 
 export const Route = createFileRoute("/crear-evento")({
@@ -42,13 +53,30 @@ export const Route = createFileRoute("/crear-evento")({
 });
 
 function RouteComponent() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const navigate = useNavigate({ from: "/crear-evento" });
+
   const form = useForm({
     defaultValues: {
       title: "",
       description: "",
+      category: "",
+      capacity: 0,
+      date: "",
+      time: "",
+      location: "",
+      price: 0,
+      organizer: "",
+      image: "",
     },
     onSubmit: async ({ value }) => {
-      toast(`Formulario enviado:\n${JSON.stringify(value, null, 2)}`);
+      setIsSubmitting(true);
+      await new Promise((r) => setTimeout(r, 1000));
+      toast.success("¡Evento creado!", {
+        description: "Tu evento ha sido publicado exitosamente.",
+      });
+      navigate({ to: "/" });
     },
     validators: {
       onSubmit: createEventSchema,
@@ -96,8 +124,9 @@ function RouteComponent() {
                         onBlur={field.handleBlur}
                         onChange={(e) => field.handleChange(e.target.value)}
                         aria-invalid={isInvalid}
-                        placeholder="Login button not working on mobile"
+                        placeholder="Ej: Conferencia de Innovación Tecnológica 2025"
                         autoComplete="off"
+                        required
                       />
                       {isInvalid && (
                         <FieldError errors={field.state.meta.errors} />
@@ -122,10 +151,11 @@ function RouteComponent() {
                           value={field.state.value}
                           onBlur={field.handleBlur}
                           onChange={(e) => field.handleChange(e.target.value)}
-                          placeholder="I'm having an issue with the login button on mobile."
+                          placeholder="Describe tu evento, qué aprenderán los asistentes, qué incluye..."
                           rows={6}
                           className="min-h-24 resize-none"
                           aria-invalid={isInvalid}
+                          required
                         />
                         <InputGroupAddon align="block-end">
                           <InputGroupText className="tabular-nums">
@@ -133,13 +163,255 @@ function RouteComponent() {
                           </InputGroupText>
                         </InputGroupAddon>
                       </InputGroup>
-                      <FieldDescription>
-                        Include steps to reproduce, expected behavior, and what
-                        actually happened.
-                      </FieldDescription>
                       {isInvalid && (
                         <FieldError errors={field.state.meta.errors} />
                       )}
+                    </Field>
+                  );
+                }}
+              />
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <form.Field
+                  name="category"
+                  children={(field) => {
+                    const isInvalid =
+                      field.state.meta.isTouched && !field.state.meta.isValid;
+                    return (
+                      <Field data-invalid={isInvalid}>
+                        <FieldLabel htmlFor={field.name}>Categoria</FieldLabel>
+                        {isInvalid && (
+                          <FieldError errors={field.state.meta.errors} />
+                        )}
+                        <Select
+                          name={field.name}
+                          value={field.state.value}
+                          onValueChange={field.handleChange}
+                          required
+                        >
+                          <SelectTrigger
+                            id="select-category"
+                            aria-invalid={isInvalid}
+                          >
+                            <SelectValue placeholder="Selecciona una categoria" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Conferencia">
+                              Conferencia
+                            </SelectItem>
+                            <SelectItem value="Meetup">Meetup</SelectItem>
+                            <SelectItem value="Taller">Taller</SelectItem>
+                            <SelectItem value="Networking">
+                              Networking
+                            </SelectItem>
+                            <SelectItem value="Webinar">Webinar</SelectItem>
+                            <SelectItem value="Festival">Festival</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                    );
+                  }}
+                />
+
+                <form.Field
+                  name="capacity"
+                  children={(field) => {
+                    const isInvalid =
+                      field.state.meta.isTouched && !field.state.meta.isValid;
+                    return (
+                      <Field data-invalid={isInvalid}>
+                        <FieldLabel htmlFor={field.name}>Capacidad</FieldLabel>
+                        <Input
+                          type="number"
+                          id={field.name}
+                          name={field.name}
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(e) =>
+                            field.handleChange(Number(e.target.value))
+                          }
+                          aria-invalid={isInvalid}
+                          placeholder="Ej: 100"
+                          autoComplete="off"
+                          required
+                        />
+                        {isInvalid && (
+                          <FieldError errors={field.state.meta.errors} />
+                        )}
+                      </Field>
+                    );
+                  }}
+                />
+
+                <form.Field
+                  name="date"
+                  children={(field) => {
+                    const isInvalid =
+                      field.state.meta.isTouched && !field.state.meta.isValid;
+                    return (
+                      <Field data-invalid={isInvalid}>
+                        <FieldLabel htmlFor={field.name}>Fecha:</FieldLabel>
+                        <Input
+                          type="date"
+                          id={field.name}
+                          name={field.name}
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          aria-invalid={isInvalid}
+                          autoComplete="off"
+                          required
+                        />
+                        {isInvalid && (
+                          <FieldError errors={field.state.meta.errors} />
+                        )}
+                      </Field>
+                    );
+                  }}
+                />
+
+                <form.Field
+                  name="time"
+                  children={(field) => {
+                    const isInvalid =
+                      field.state.meta.isTouched && !field.state.meta.isValid;
+                    return (
+                      <Field data-invalid={isInvalid}>
+                        <FieldLabel htmlFor={field.name}>Hora:</FieldLabel>
+                        <Input
+                          type="time"
+                          id={field.name}
+                          name={field.name}
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          aria-invalid={isInvalid}
+                          autoComplete="off"
+                          required
+                        />
+                        {isInvalid && (
+                          <FieldError errors={field.state.meta.errors} />
+                        )}
+                      </Field>
+                    );
+                  }}
+                />
+              </div>
+
+              <form.Field
+                name="location"
+                children={(field) => {
+                  const isInvalid =
+                    field.state.meta.isTouched && !field.state.meta.isValid;
+                  return (
+                    <Field data-invalid={isInvalid}>
+                      <FieldLabel htmlFor={field.name}>Ubicación:</FieldLabel>
+                      <Input
+                        type="text"
+                        id={field.name}
+                        name={field.name}
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        aria-invalid={isInvalid}
+                        placeholder="Ej: Centro de Convenciones Madrid o Online"
+                        autoComplete="off"
+                        required
+                      />
+                      {isInvalid && (
+                        <FieldError errors={field.state.meta.errors} />
+                      )}
+                    </Field>
+                  );
+                }}
+              />
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <form.Field
+                  name="price"
+                  children={(field) => {
+                    const isInvalid =
+                      field.state.meta.isTouched && !field.state.meta.isValid;
+                    return (
+                      <Field data-invalid={isInvalid}>
+                        <FieldLabel htmlFor={field.name}>Precio:</FieldLabel>
+                        <Input
+                          type="number"
+                          id={field.name}
+                          name={field.name}
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(e) =>
+                            field.handleChange(Number(e.target.value))
+                          }
+                          aria-invalid={isInvalid}
+                          placeholder="0.00 (Gratis si es 0)"
+                          autoComplete="off"
+                        />
+                        {isInvalid && (
+                          <FieldError errors={field.state.meta.errors} />
+                        )}
+                      </Field>
+                    );
+                  }}
+                />
+
+                <form.Field
+                  name="organizer"
+                  children={(field) => {
+                    const isInvalid =
+                      field.state.meta.isTouched && !field.state.meta.isValid;
+                    return (
+                      <Field data-invalid={isInvalid}>
+                        <FieldLabel htmlFor={field.name}>
+                          Organizador:
+                        </FieldLabel>
+                        <Input
+                          type="number"
+                          id={field.name}
+                          name={field.name}
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          aria-invalid={isInvalid}
+                          placeholder="Nombre del organizador"
+                          autoComplete="off"
+                          required
+                        />
+                        {isInvalid && (
+                          <FieldError errors={field.state.meta.errors} />
+                        )}
+                      </Field>
+                    );
+                  }}
+                />
+              </div>
+
+              <form.Field
+                name="image"
+                children={(field) => {
+                  const isInvalid =
+                    field.state.meta.isTouched && !field.state.meta.isValid;
+                  return (
+                    <Field data-invalid={isInvalid}>
+                      <FieldLabel htmlFor={field.name}>Imagen:</FieldLabel>
+                      <Input
+                        type="file"
+                        id={field.name}
+                        name={field.name}
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        aria-invalid={isInvalid}
+                        placeholder="Login button not working on mobile"
+                        autoComplete="off"
+                      />
+                      {isInvalid && (
+                        <FieldError errors={field.state.meta.errors} />
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Opcional: URL de una imagen representativa del evento
+                      </p>
                     </Field>
                   );
                 }}
@@ -150,14 +422,18 @@ function RouteComponent() {
         <CardFooter>
           <Field orientation="horizontal">
             <Button
+              type="submit"
+              disabled={isSubmitting}
+              form="create-event-form"
+            >
+              {isSubmitting ? "Publicando..." : "Publicar evento"}
+            </Button>
+            <Button
               type="button"
               variant="outline"
               onClick={() => form.reset()}
             >
-              Reset
-            </Button>
-            <Button type="submit" form="create-event-form">
-              Submit
+              Reiniciar
             </Button>
           </Field>
         </CardFooter>
