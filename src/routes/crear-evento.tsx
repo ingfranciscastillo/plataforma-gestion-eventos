@@ -43,7 +43,7 @@ const createEventSchema = z.object({
   date: z.string().min(1, "La fecha es obligatoria"),
   time: z.string().min(1, "La hora es obligatoria"),
   location: z.string().min(3, "La ubicación es obligatoria"),
-  price: z.number().min(0, "El precio no puede ser negativo").optional(),
+  price: z.number().min(0, "El precio no puede ser negativo"),
   organizer: z.string().min(2, "El organizador es obligatorio"),
   image: z.url("Debe ser una URL válida").optional(),
 });
@@ -68,10 +68,10 @@ function RouteComponent() {
       location: "",
       price: 0,
       organizer: "",
-      image: "",
     },
     onSubmit: async ({ value }) => {
       setIsSubmitting(true);
+      console.log(value);
       await new Promise((r) => setTimeout(r, 1000));
       toast.success("¡Evento creado!", {
         description: "Tu evento ha sido publicado exitosamente.",

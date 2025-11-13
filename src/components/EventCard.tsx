@@ -94,7 +94,7 @@ export const EventCard = ({ event }: EventCardProps) => {
           )}
         </div>
 
-        <Link to={`/evento/${event.id}`}>
+        <Link params={{ id: event.id }} to={`/evento/$id`}>
           <Button variant="default" size="sm">
             Ver detalles
           </Button>
